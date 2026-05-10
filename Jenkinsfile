@@ -56,7 +56,7 @@ pipeline {
         stage('Deploy to Staging') {
             steps {
                 sh """
-            sudo docker rm -f shopflow-staging 2>/dev/null || true
+            docker rm -f shopflow-staging 2>/dev/null || true
             sleep 2
             docker run -d --name shopflow-staging -p 3001:3000 \
               -e NODE_ENV=staging ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}
@@ -73,7 +73,7 @@ pipeline {
         stage('Deploy to Production') {
             steps {
                 sh """
-            sudo docker rm -f shopflow-prod 2>/dev/null || true
+            docker rm -f shopflow-prod 2>/dev/null || true
             sleep 2
             docker run -d --name shopflow-prod -p 3002:3000 \
               -e NODE_ENV=production ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}
