@@ -1,6 +1,12 @@
 pipeline {
     agent any
     
+    // القسم الجديد: يتيح لك خيارات قبل بدء التشغيل
+    parameters {
+        choice(name: 'DEPLOY_ENV', choices: ['staging', 'production'], description: 'Choose environment to focus on')
+        booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: 'Check this to skip Unit Tests and Linting')
+    }
+
     tools {
         nodejs 'Node18'
     }
@@ -21,6 +27,8 @@ pipeline {
         }
 
         stage('Quality Gate (Parallel)') {
+            // لن تعمل هذه المرحلة إلا إذا كان خيار SKIP_TESTS غير مفعل (false)
+            when { expression { params.SKIP_TESTS == false } }
             parallel {
                 stage('Unit Tests') {
                     steps {
