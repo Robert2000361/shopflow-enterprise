@@ -65,7 +65,9 @@ pipeline {
             when { expression { params.DEPLOY_ENV in ['production', 'both'] } }
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
-                    input message: 'Does Staging look good? Deploy to Production?', ok: 'Deploy!'
+                    script {
+                        input message: 'Does Staging look good? Deploy to Production?', ok: 'Deploy!'
+                    }
                 }
             }
         }
@@ -84,7 +86,17 @@ pipeline {
     }
 
     post {
-        always { sh 'docker logout' }
-        success { echo "Successfully deployed ShopFlow Build #${IMAGE_TAG}" }
+        always {
+            echo 'Cleaning up Docker environment...'
+            sh 'docker logout'
+            sh 'docker image prune -f'
+            cleanWs()
+        }
+        success {
+            echo "✅ ShopFlow Build #${env.BUILD_NUMBER} Deployed Successfully!"
+        }
+        failure {
+            echo "❌ ALERT: Build #${env.BUILD_NUMBER} Failed! Check logs immediately."
+        }
     }
 }
