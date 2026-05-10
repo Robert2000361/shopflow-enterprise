@@ -53,10 +53,12 @@ pipeline {
             }
         }
 
+        
         stage('Deploy to Staging') {
             steps {
-                echo "Deploying to Staging Environment..."
-                sh "docker stop shopflow-staging || true && docker rm shopflow-staging || true"
+                echo "Cleaning up old container and deploying to Staging..."
+                // الأمر السحري: بيمسح القديم لو موجود، ولو مش موجود بيكمل عادي من غير ما يخرج بخطأ
+                sh "docker rm -f shopflow-staging || true" 
                 sh "docker run -d --name shopflow-staging -p 3001:3000 -e NODE_ENV=staging ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
             }
         }
@@ -67,10 +69,11 @@ pipeline {
             }
         }
 
+        
         stage('Deploy to Production') {
             steps {
-                echo "Deploying to Production Environment..."
-                sh "docker stop shopflow-prod || true && docker rm shopflow-prod || true"
+                echo "Cleaning up old container and deploying to Production..."
+                sh "docker rm -f shopflow-prod || true"
                 sh "docker run -d --name shopflow-prod -p 3002:3000 -e NODE_ENV=production ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
             }
         }
