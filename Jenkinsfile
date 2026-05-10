@@ -39,16 +39,17 @@ pipeline {
 
         stage('Build & Push Image') {
             steps {
-                sh "docker build -t ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
-                sh "echo \$DOCKER_CREDS_PSW | docker login -u \$DOCKER_CREDS_USR --password-stdin"
-                sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+                retry(3) {
+                    sh "docker build -t ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
+                    sh "echo \$DOCKER_CREDS_PSW | docker login -u \$DOCKER_CREDS_USR --password-stdin"
+                    sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+                }
                 sh "docker tag ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_USER}/${IMAGE_NAME}:latest"
                 sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:latest"
             }
         }
 
         stage('Deploy to Staging') {
-            // يشتغل لو اخترت staging أو both
             when { expression { params.DEPLOY_ENV in ['staging', 'both'] } }
             steps {
                 sh """
@@ -61,15 +62,15 @@ pipeline {
         }
 
         stage('Approval Gate') {
-            // يشتغل بس لو هيروح Production
             when { expression { params.DEPLOY_ENV in ['production', 'both'] } }
             steps {
-                input message: 'Does Staging look good? Deploy to Production?', ok: 'Deploy!'
+                timeout(time: 5, unit: 'MINUTES') {
+                    input message: 'Does Staging look good? Deploy to Production?', ok: 'Deploy!'
+                }
             }
         }
 
         stage('Deploy to Production') {
-            // يشتغل لو اخترت production أو both
             when { expression { params.DEPLOY_ENV in ['production', 'both'] } }
             steps {
                 sh """
